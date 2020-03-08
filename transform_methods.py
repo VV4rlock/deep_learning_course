@@ -28,11 +28,18 @@ class Pad2D(object):
 
         self.fill = fill
 
+    def is_train_only(self):
+        return False
+
+    def is_mandatory(self):
+        return True
+
     def constant_pad(self, image):
         h, w = (self.out_shape[0] - image.shape[0]) // 2, (self.out_shape[1] - image.shape[1]) // 2
         out = np.zeros(self.out_shape, dtype=np.uint8) + self.fill
         H, W = out.shape
         out[h:H - h, w:W - w] = image
+
         return out
 
     def edge_pad(self, image):
@@ -109,16 +116,11 @@ class Pad3D(object):
             res[:, :, channel] = self.pad2d.call(image[:, :, channel])
         return res
 
+    def is_train_only(self):
+        return False
 
-class GreyToBRG(object):
-    def __init__(self):
-        pass
-
-    def call(self, image):
-        image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
-        for channel in range(3):
-            image[:,:,channel] = (image[:,:,channel] * (np.random.rand() / 2 + 0.5)).astype(np.uint8)
-        return image
+    def is_mandatory(self):
+        return True
 
 
 class Translate2D(object):
@@ -139,6 +141,12 @@ class Translate2D(object):
             if direction == 'down':
                 self.shift = - self.shift
             self.call = self.vertical
+
+    def is_train_only(self):
+        return True
+
+    def is_mandatory(self):
+        return False
 
     def vertical(self, image):
         res = np.roll(image, self.shift, axis=0)
@@ -169,6 +177,12 @@ class Translate3D(object):
         """
         self.translate2d = Translate2D(shift,direction,roll)
 
+    def is_train_only(self):
+        return True
+
+    def is_mandatory(self):
+        return False
+
     def call(self, image):
         res = np.zeros((image.shape[0], image.shape[1], 3))
         for channel in range(image.shape[2]):
@@ -186,6 +200,12 @@ class RandomCrop(object):
         else:
             self.out_shape = crop_size
 
+    def is_train_only(self):
+        return False
+
+    def is_mandatory(self):
+        return False
+
     def call(self, image):
         h = np.random.randint(0, image.shape[0] - self.out_shape[0])
         w = np.random.randint(0, image.shape[1] - self.out_shape[1])
@@ -201,6 +221,12 @@ class CenterCrop(object):
             self.out_shape = (crop_size, crop_size)
         else:
             self.out_shape = crop_size
+
+    def is_train_only(self):
+        return False
+
+    def is_mandatory(self):
+        return True
 
     def call(self, image):
         h = (image.shape[0] - self.out_shape[0]) // 2
@@ -222,6 +248,12 @@ class Scale(object):
         self.scale = scale
         self.crop_obj = CenterCrop(self.out_shape)
 
+    def is_train_only(self):
+        return False
+
+    def is_mandatory(self):
+        return True
+
     def call(self, img):
         img = cv2.resize(img, (int(img.shape[1] * self.scale), int(img.shape[0] * self.scale)))
         return self.crop_obj.call(img)
@@ -236,6 +268,12 @@ class RandomRotateImage(object):
         """
         self.min_angle = min_angle
         self.max_angle = max_angle
+
+    def is_train_only(self):
+        return True
+
+    def is_mandatory(self):
+        return False
 
     def call(self, image):
         image_center = tuple(np.array(image.shape[1::-1]) / 2)
@@ -255,9 +293,15 @@ class GaussianNoise2D(object):
         self.mean = mean
         self.sigma = sigma
 
+    def is_train_only(self):
+        return True
+
+    def is_mandatory(self):
+        return False
+
     def call(self, image):
-        image = image.astype(np.int16)
-        image *= np.random.normal(self.mean, np.random.rand() / self.sigma, image.shape) + 1
+        #image = image.astype(np.int16)
+        image = (image * np.random.normal(self.mean, np.random.rand() / self.sigma, image.shape) + 1).astype(np.uint8)
         return image
 
 
@@ -273,6 +317,12 @@ class GaussianNoise3D(object):
         self.sigma = sigma
         self.by_channel = by_channel
 
+    def is_train_only(self):
+        return True
+
+    def is_mandatory(self):
+        return False
+
     def call(self, image):
         image = image.astype(np.int16)
         if self.by_channel:
@@ -283,8 +333,8 @@ class GaussianNoise3D(object):
             noise = np.random.normal(self.mean, np.random.rand() * self.sigma, (image.shape[0],image.shape[1])) + 1
             for channel in range(image.shape[2]):
                 image[:, :, channel] = (image[:, :, channel] * noise).astype(np.int16)
-        image[image>255] = 255
-        image[image<0]=0
+        image[image > 255] = 255
+        image[image < 0] = 0
         return image.astype(np.uint8)
 
 
@@ -297,6 +347,12 @@ class Salt(object):
         self.prob = prob
         self.by_channel = by_channel
 
+    def is_train_only(self):
+        return True
+
+    def is_mandatory(self):
+        return False
+
     def call(self, image):
         if len(image.shape) == 2:
             white = 255
@@ -305,7 +361,7 @@ class Salt(object):
             if self.by_channel:
                 white = np.ones((image.shape[0], image.shape[1])) * 255
                 for channel in range(image.shape[2]):
-                    image[:,:,channel] = np.where(np.random.rand(image.shape[0], image.shape[1]) < self.prob,
+                    image[:, :, channel] = np.where(np.random.rand(image.shape[0], image.shape[1]) < self.prob,
                                                   white, image[:,:,channel]).astype(np.uint8)
             else:
                 white = np.ones((image.shape[0], image.shape[1])) * 255
@@ -324,6 +380,12 @@ class Pepper(object):
         """
         self.prob = prob
         self.by_channel = by_channel
+
+    def is_train_only(self):
+        return True
+
+    def is_mandatory(self):
+        return False
 
     def call(self, image):
         if len(image.shape) == 2:
@@ -345,20 +407,35 @@ class Pepper(object):
 
 
 class ChangeChannel(object):
-    def __init__(self, channel_number, value=30):
+    def __init__(self, value, channel_number=0):
         """
-        :param value (int): насколько изменить яркость. Аналогично hue, contrast, saturation.
+        :param value (int): насколько изменить яркость. hue, contrast, saturation.
+        ЭТО И ЕСТЬ ИЗМЕНЕНИЕ ТОГО КАНАЛА, КОТОРЫЙ НУЖЕН
         """
         self.value = value
         self.channel = channel_number
 
+    def is_train_only(self):
+        return False
+
+    def is_mandatory(self):
+        return False
+
     def call(self, image):
-        channel = image[:, :, self.channel]
-        if self.value > 0:
-            channel[channel > 255 - self.value] = 255 - self.value
+        if len(image.shape) == 3:
+            channel = image[:, :, self.channel]
+            if self.value > 0:
+                channel[channel > 255 - self.value] = 255 - self.value
+            else:
+                channel[channel < - self.value] = -self.value
+            image[:, :, self.channel] = channel + self.value
         else:
-            channel[channel < - self.value] = -self.value
-        image[:, :, self.channel] = channel + self.value
+            if self.value > 0:
+                image[image > 255 - self.value] = 255 - self.value
+            else:
+                image[image < - self.value] = -self.value
+            image = image + self.value
+        return image
 
 
 class GaussianBlur(object):
@@ -368,6 +445,12 @@ class GaussianBlur(object):
         """
         self.ksize = ksize
         self.std = 1
+
+    def is_train_only(self):
+        return False
+
+    def is_mandatory(self):
+        return False
 
     def call(self, image):
         return cv2.GaussianBlur(image, self.ksize, self.std)
@@ -379,6 +462,12 @@ class Normalize(object):
         :param mean (int or tuple): среднее значение (пикселя), которое необходимо вычесть.
         """
         self.mean = mean
+
+    def is_train_only(self):
+        return False
+
+    def is_mandatory(self):
+        return True
 
     def call(self, image):
         return (image.astype(np.float32) - 128) / 255
