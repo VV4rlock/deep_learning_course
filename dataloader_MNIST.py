@@ -127,7 +127,7 @@ class DataLoader(object):
             for index, transform in enumerate(self.transforms):
                 if np.random.rand() < self.transform_probs[index]:
                     image = transform.call(image)
-            out_batch.append((image, label))
+            out_batch.append((image, self.one_hot_labels(label)))
         return out_batch
 
     def batch_generator(self):
@@ -170,7 +170,7 @@ class DataLoader(object):
         res = np.zeros((batch_shape[0], batch_shape[1] * self.batch_size), dtype=np.uint8)
         for index, img_label in enumerate(batch):
             img, label = img_label
-            logger.debug(f"{index}: {label}, {self.one_hot_labels(label)}")
+            logger.debug(f"{index}: {label}, {label}")
             res[:, index * batch_shape[1]:(index + 1) * batch_shape[1]] = img
 
         cv2.imshow(f"Batch size={self.batch_size}", res)

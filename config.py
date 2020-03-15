@@ -6,13 +6,13 @@ from scipy import signal
 from easydict import EasyDict
 from transform_methods import *
 
-np.random.seed(1)
+#np.random.seed(1)
 logging.basicConfig(format="[%(filename)s: %(funcName)s] %(message)s", level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 cfg = EasyDict()
 
 cfg.SMALL_SCREEN = False
-cfg.DATASET = ['MNIST', 'CIFAR'][1]
+cfg.DATASET = ['MNIST', 'CIFAR'][0]
 
 
 if cfg.DATASET == 'MNIST':
@@ -20,11 +20,10 @@ if cfg.DATASET == 'MNIST':
     cfg.labels_path = "MNIST/train-labels-idx1-ubyte"
     cfg.nrof_classes = 10
     cfg.dataset_type = ['train', 'valid', 'test'][0]
-    cfg.shuffle = True
+    cfg.shuffle = False
     cfg.batch_size = 8
-    cfg.transforms = [Pad2D(56, 0, mode='symmetric'),  Scale(56, 2), GaussianNoise2D(0, 0.001), Salt(0.05),
-                      Pepper(0.05), ChangeChannel(50)]
-    cfg.transform_probs = [1, 1, 0.5, 0.3, 0.5, 0.5] # первые 2 вероятности не важны, т к применяются обязательно
+    cfg.transforms = []
+    cfg.transform_probs = [] # первые 2 вероятности не важны, т к применяются обязательно
     cfg.sample_type = ['default', 'balanced', 'prob'][0]
     cfg.epoch_size = None
     cfg.probabilities = [.5, .3, .2, 0, 0, 0, 0, 0, 0, 0]
