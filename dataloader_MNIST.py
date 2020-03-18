@@ -111,9 +111,10 @@ class DataLoader(object):
         """
         Необходимо вывести количество элементов в датасете, количество классов и количество элементов в каждом классе
         """
-        print(f"Statistic:\n\tdataset_size: {self.number_of_samples}\n\tclass_count: {self.nrof_classes}\
+        print(f"Statistic {self.dataset_type}:\n\tdataset_size: {self.number_of_samples}\n\tclass_count: {self.nrof_classes}\
                 \n\tby_classes: {self.classes_size}\
-                \n\tepoch_size: {self.epoch_size}")
+                \n\tepoch_size: {self.epoch_size}\
+                \n\tbatch_size: {self.batch_size}")
 
     def one_hot_labels(self, labels):
         if isinstance(labels, (list, tuple, np.ndarray)):
@@ -127,8 +128,22 @@ class DataLoader(object):
             for index, transform in enumerate(self.transforms):
                 if np.random.rand() < self.transform_probs[index]:
                     image = transform.call(image)
+                    #print(image.shape)
             out_batch.append((image, self.one_hot_labels(label)))
         return out_batch
+
+    def get_full_generator(self, count=-1):
+        """
+        :return: one sample with one-hot-encoding vector
+        """
+        if count == -1:
+            for i in range(self.number_of_samples):
+                yield (self.read_data(i), self.one_hot_labels(self.labels[i]))
+        else:
+            np.random.shuffle(self.shuffle_map)
+            for i in range(count):
+                yield (self.read_data(self.shuffle_map[i]), self.one_hot_labels(self.labels[self.shuffle_map[i]]))
+
 
     def batch_generator(self):
         """

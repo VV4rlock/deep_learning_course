@@ -6,9 +6,10 @@ from scipy import signal
 from easydict import EasyDict
 from transform_methods import *
 
-#np.random.seed(1)
+#np.random.seed(2)
 logging.basicConfig(format="[%(filename)s: %(funcName)s] %(message)s", level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+SMALL_SCREEN = False
 cfg = EasyDict()
 
 cfg.SMALL_SCREEN = False
@@ -20,13 +21,13 @@ if cfg.DATASET == 'MNIST':
     cfg.labels_path = "MNIST/train-labels-idx1-ubyte"
     cfg.nrof_classes = 10
     cfg.dataset_type = ['train', 'valid', 'test'][0]
-    cfg.shuffle = False
-    cfg.batch_size = 8
-    cfg.transforms = []
-    cfg.transform_probs = [] # первые 2 вероятности не важны, т к применяются обязательно
-    cfg.sample_type = ['default', 'balanced', 'prob'][0]
-    cfg.epoch_size = None
-    cfg.probabilities = [.5, .3, .2, 0, 0, 0, 0, 0, 0, 0]
+    cfg.shuffle = True
+    cfg.batch_size = 1500
+    cfg.transforms = [Scale(28, 0.8), RandomRotateImage(-10, 10), Normalize()]
+    cfg.transform_probs = [0.1, 0.2, 1]
+    cfg.sample_type = ['default', 'balanced', 'prob'][2]
+    cfg.epoch_size = 10
+    cfg.probabilities = np.array([0.04, 0.04, 0.12, 0.1 , 0.1 , 0.2, 0.08, 0.08, 0.09, 0.15])
 
 else:
     cfg.data_path = "CIFAR/train"
@@ -34,10 +35,10 @@ else:
     cfg.nrof_classes = 10
     cfg.dataset_type = ['train', 'valid', 'test'][0]
     cfg.shuffle = True
-    cfg.batch_size = 8
+    cfg.batch_size = 10
     cfg.transforms = [Pad3D(56), Scale(56, 2), ChangeChannel(200, 2)]
-    cfg.transform_probs = [1,1, 0.5]
-    cfg.sample_type = ['default', 'balanced', 'prob'][2]
+    cfg.transform_probs = [1, 1, 0.5]
+    cfg.sample_type = ['default', 'balanced', 'prob'][1]
     cfg.epoch_size = None
     cfg.probabilities = [.5, .3, .2, 0, 0, 0, 0, 0, 0, 0]
 

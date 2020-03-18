@@ -8,11 +8,14 @@ class InputLayer(BaseLayerClass):
         self._output_shape = shape
         self._previous_layer = None
 
-    def __call__(self, x, phase):
-        return x
+    def __call__(self, x):
+        return x.reshape(self._output_shape)
 
     def is_trainable(self):
         return False
+
+    def is_input_layer(self):
+        return True
 
     def backward(self, dy):
         logger.warn("Input layer is not trainable")
@@ -35,8 +38,8 @@ class SoftmaxOutputLayer(BaseLayerClass):
         self._previous_layer = previous_layer
         self.y = None
 
-    def __call__(self, x, phase):
-        e = np.exp(x)
+    def __call__(self, x):
+        e = np.exp(x - x.max())
         self.y = e / e.sum()
         return self.y
 
@@ -44,7 +47,7 @@ class SoftmaxOutputLayer(BaseLayerClass):
         return False
 
     def backward(self, dz_dl):
-        self._previous_layer.backward(dz_dl)
+        return dz_dl
 
     def update_weights(self, update_func):
         logger.warn("Softmax layer is not trainable")
@@ -64,7 +67,7 @@ class SimpleOutputLayer(BaseLayerClass):
         self._previous_layer = previous_layer
         self.y = None
 
-    def __call__(self, x, phase):
+    def __call__(self, x):
         self.y = x[:]
         return x
 
@@ -72,7 +75,7 @@ class SimpleOutputLayer(BaseLayerClass):
         return False
 
     def backward(self, dz_dl):
-        self._previous_layer.backward(dz_dl)
+        return dz_dl
 
     def update_weights(self, update_func):
         logger.warn("Output layer is not trainable")
@@ -105,24 +108,24 @@ class FullyConnectedLayer(BaseLayerClass):
         assert isinstance(activation_func, BaseActivationFunction)
         self._activation_func = activation_func
         self._input_shape = previous_layer.get_output_shape()
+        self.neuron_count = neuron_count
         self._output_shape = neuron_count
         self._previous_layer = previous_layer
         self.a = None
         self.dE_da = None
         self.x = None
+        self.b = np.zeros(neuron_count)
         if init_distribution == 'normal':
             sigma = self._sigma_dict[initialization](self._input_shape, self._output_shape)
             self.W = np.random.normal(0, sigma, (neuron_count, self._input_shape))
-            self.b = np.random.normal(0, sigma, neuron_count)
         elif init_distribution == 'uniform':
             l = self._l_dict[initialization](self._input_shape, self._output_shape)
             self.W = np.random.uniform(-l, l, (neuron_count, self._input_shape))
-            self.b = np.random.uniform(-l, l, neuron_count)
         else:
             # for more methods
             raise Exception("WTF? Something went wrong")
 
-    def __call__(self, x: np.ndarray, phase):
+    def __call__(self, x: np.ndarray):
         assert x.shape[0] == self._input_shape
         self.x = x[:]
         self.a = self.W.dot(x) + self.b
@@ -134,18 +137,16 @@ class FullyConnectedLayer(BaseLayerClass):
     def get_grad(self):
         assert self.dE_da is not None
         assert self.x is not None
-        print(f"getgrad: {self.dE_da.shape} {self.x.shape}")
-        return self.dE_da.reshape(-1, 1).dot(self.x.reshape(1, -1))
+        return (self.dE_da.reshape(-1, 1).dot(self.x.reshape(1, -1)), self.dE_da)
 
     def backward(self, dy):
         self.dE_da = self._activation_func.derivate(self.a) * dy
-        self._previous_layer.backward(self.dE_da)
+        return np.dot(self.W.T, self.dE_da)
 
-    def update_weights(self, update_func):
-        dW = self.dE_da.reshape(-1, 1).dot(self.x.reshape(1, -1))
-        self.W = update_func(self.W, dW)
-        self.b = update_func(self.b, self.dE_da)
+    def update_weights(self, param_delta):
+        assert len(param_delta) == 2
+        self.W += param_delta[0]
+        self.b += param_delta[1]
 
     def get_nrof_trainable_params(self):
-        return self._input_shape * (self._output_shape + 1)
-
+        return self.W.size + self.b.size

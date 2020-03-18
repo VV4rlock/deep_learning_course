@@ -23,4 +23,17 @@ class Sigmoid(BaseActivationFunction):
         return 1 / (1 + np.exp(-input))
 
     def derivate(self, input: np.ndarray) -> np.ndarray:
-        pass
+        t = self(input)
+        return t * (1-t)
+
+class Hyperbolic(BaseActivationFunction):
+    def __call__(self, input: np.ndarray) -> np.ndarray:
+        return np.sinh(input)/np.cosh(input)
+
+    def derivate(self, input: np.ndarray) -> np.ndarray:
+        return 1 - np.tanh(input) ** 2
+
+
+if __name__ == "__main__":
+    assert isinstance(Linear(), BaseActivationFunction)
+    print(isinstance(Linear(), BaseActivationFunction))
