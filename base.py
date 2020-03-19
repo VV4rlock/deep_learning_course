@@ -97,6 +97,8 @@ class BaseOptimizer:
                 prev_layer.update_weights(p[layer_index])
                 layer_index += 1
             prev_layer = prev_layer.get_previous_layer()
+        if isinstance(hit, int):
+            hit = count * 0
         return loss, hit, count
 
 

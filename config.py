@@ -15,6 +15,9 @@ cfg = EasyDict()
 cfg.SMALL_SCREEN = False
 cfg.DATASET = ['MNIST', 'CIFAR'][0]
 
+cfg.TEST_PATH ="MNIST/t10k-images-idx3-ubyte"
+cfg.TEST_LABEL_PATH = "MNIST/t10k-labels-idx1-ubyte"
+
 
 if cfg.DATASET == 'MNIST':
     cfg.data_path = "MNIST/train-images-idx3-ubyte"

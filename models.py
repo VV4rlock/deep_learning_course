@@ -42,13 +42,14 @@ class MLP(BaseModel):
         return res
 
     def validate(self, generator):
-        hit, count = 0, 0
+        hit, count, loss = 0, 0, 0
         for input, one_hot_vector in generator:
             res = self(input)
             count += one_hot_vector
+            loss -= np.log(res[one_hot_vector.argmax()])
             if one_hot_vector.argmax() == res.argmax():
                 hit += one_hot_vector
-        return hit, count
+        return loss, hit, count
 
 
 
