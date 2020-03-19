@@ -54,6 +54,12 @@ class BaseLayerClass:
 
 class BaseOptimizer:
 
+    def set_learning_rate(self, learning_rate):
+        self.learning_rate = learning_rate
+
+    def get_learning_rate(self):
+        return self.learning_rate
+
     def minimise(self, batch):
         batch_size = len(batch)
         net_params = []

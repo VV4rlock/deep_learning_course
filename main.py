@@ -107,26 +107,34 @@ def test_MLP():
     try:
         accuracy = 0
         accuracy_max = 0
-        while accuracy < 0.96:
+        acuracy_arr = []
+        window_len = 5
+        while accuracy < 0.99:
             iteration += 1
-            print(f"{iteration} learning iteration")
+
             #err_rate, entropy = model.train(one_batch_gen(overfit_batch, 10), optimizer)
             err_rate, entropy = model.train(dl_train.batch_generator(), optimizer)
             error_rate += err_rate
             cross_entripy += entropy
-            print(f"train {iteration} validation")
             hit, count = model.validate(dl_train.get_full_generator(count=10000))
             train_accuracy.append(hit.sum()/count.sum())
-            print(f"\taccuracy={hit.sum()/count.sum()}, class_accuracy={hit / count}")
-            print(f"test {iteration} validation")
             #cross, hit, count = model.validate(one_batch_validate(overfit_batch))
             hit, count = model.validate(dl_test.get_full_generator())
+            prev_accuracy = accuracy
             accuracy = hit.sum()/count.sum()
+            if iteration > window_len:
+                 var= np.array(test_accuracy[-window_len:])
+                 if train_accuracy[-3] == train_accuracy[-1]:
+                     optimizer.set_learning_rate(optimizer.get_learning_rate() * 3)
+                 elif (train_accuracy[-2] - train_accuracy[-1]) > 3 * (var.max() - var.min()):
+                     optimizer.set_learning_rate(optimizer.get_learning_rate()/2)
+                     window_len *= 2
+
             if accuracy > accuracy_max:
                 model.dump_model('best_test_model_Momentum.pickle')
                 accuracy_max = accuracy
             test_accuracy.append(accuracy)
-            print(f"\taccuracy={accuracy}, class_accuracy={hit/count}")
+            print(f"\repoch: {iteration} train_acc: {train_accuracy[-1]} test_acc: {test_accuracy[-1]} best: {accuracy_max} learning_rate: {optimizer.get_learning_rate()}")
     except Exception as e:
         print(f"Exception {e}")
     finally:
