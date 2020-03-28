@@ -6,7 +6,7 @@ from optimizers import SGD,Momentum
 
 def one_batch_overfit():
     dl_train = DataLoader(
-        cfg.data_path,
+        cfg.train_data_path,
         cfg.nrof_classes,
         cfg.dataset_type,
         cfg.shuffle,
@@ -14,7 +14,7 @@ def one_batch_overfit():
         [],
         [],
         cfg.sample_type,
-        cfg.labels_path,
+        cfg.train_labels_path,
         cfg.epoch_size,
         cfg.probabilities
     )

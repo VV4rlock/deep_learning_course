@@ -6,7 +6,7 @@ from dataloader_MNIST import DataLoader
 
 def train_MLP():
     dl_train = DataLoader(
-        cfg.data_path,
+        cfg.train_data_path,
         cfg.nrof_classes,
         cfg.dataset_type,
         cfg.shuffle,
@@ -14,7 +14,7 @@ def train_MLP():
         cfg.transforms,
         cfg.transform_probs,
         cfg.sample_type,
-        cfg.labels_path,
+        cfg.train_labels_path,
         cfg.epoch_size,
         cfg.probabilities
     )
