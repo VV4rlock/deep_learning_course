@@ -32,7 +32,7 @@ class DataLoader(object):
 
         #for MNIST only?
         self.sample_filenames = listdir(data_path)
-        self.sample_filenames = [i.split('.')[0] for i in self.sample_filenames]
+        self.sample_filenames = set([i.split('.')[0] for i in self.sample_filenames])
         print(self.sample_filenames)\
 
         self.data_path = data_path

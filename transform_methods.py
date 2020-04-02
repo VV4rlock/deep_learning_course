@@ -138,7 +138,7 @@ class Translate2D(object):
                 self.shift = - self.shift
             self.call = self.horizontal
         elif direction in ['down', 'up']:
-            if direction == 'down':
+            if direction == 'up':
                 self.shift = - self.shift
             self.call = self.vertical
 
@@ -154,7 +154,7 @@ class Translate2D(object):
             if self.shift > 0:
                 res[0:self.shift, :] = 0
             else:
-                res[res.shape[0] + self.shift, :] = 0
+                res[res.shape[0] + self.shift:, :] = 0
         return res
 
     def horizontal(self, image):
@@ -163,7 +163,7 @@ class Translate2D(object):
             if self.shift > 0:
                 res[:, 0:self.shift] = 0
             else:
-                res[:, res.shape[1] + self.shift] = 0
+                res[:, res.shape[1] + self.shift:] = 0
         return res
 
 
@@ -229,6 +229,10 @@ class CenterCrop(object):
         return True
 
     def call(self, image):
+        if self.out_shape[0] > image.shape[0]:
+            h = (self.out_shape[0] - image.shape[0]) // 2
+            w = ( self.out_shape[1] - image.shape[1]) // 2
+            return np.pad(image, ((h, h), (w, w)), mode='constant', constant_values=((0, 0), (0, 0)))
         h = (image.shape[0] - self.out_shape[0]) // 2
         w = (image.shape[1] - self.out_shape[1]) // 2
         return image[h:h+self.out_shape[0], w:w+self.out_shape[1]]
@@ -252,7 +256,7 @@ class Scale(object):
         return False
 
     def is_mandatory(self):
-        return True
+        return False
 
     def call(self, img):
         img = cv2.resize(img, (int(img.shape[1] * self.scale), int(img.shape[0] * self.scale)))
@@ -283,7 +287,7 @@ class RandomRotateImage(object):
 
 
 class GaussianNoise2D(object):
-    def __init__(self, mean=0, sigma=0.03):
+    def __init__(self, mean=0, sigma=0.03, ampl=10):
         """
         :param mean (int): среднее значение.
         :param sigma (int): максимальное значение ско. Итоговое значение должно быть выбрано равномерно в промежутке
@@ -292,6 +296,7 @@ class GaussianNoise2D(object):
         """
         self.mean = mean
         self.sigma = sigma
+        self.ampl = ampl
 
     def is_train_only(self):
         return True
@@ -300,9 +305,11 @@ class GaussianNoise2D(object):
         return False
 
     def call(self, image):
-        #image = image.astype(np.int16)
-        image = (image * np.random.normal(self.mean, np.random.rand() / self.sigma, image.shape) + 1).astype(np.uint8)
-        return image
+        image = image.astype(np.int16)
+        image = (image + (np.random.normal(self.mean, np.random.rand() * self.sigma, image.shape) * self.ampl))
+        image[image > 255] = 255
+        image[image < 0] = 0
+        return image.astype(np.uint8)
 
 
 class GaussianNoise3D(object):
@@ -470,4 +477,21 @@ class Normalize(object):
         return True
 
     def call(self, image):
-        return (image.astype(np.float32) - 128) / 255
+        return (image.astype(np.float64) - self.mean) / 255
+
+class AdaptiveNormalize(object):
+    def __init__(self):
+        pass
+
+    def is_train_only(self):
+        return False
+
+    def is_mandatory(self):
+        return True
+
+    def call(self, image):
+        image = image.astype(np.float64)
+        image -= image.min()
+        image -= image.mean()
+        image /= np.abs(image).max()
+        return image
