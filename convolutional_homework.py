@@ -31,11 +31,11 @@ def conv_test():
         kernel = np.random.uniform(-3.0, 3.0, (n_filters, channels, k_size[0], k_size[1]))
         bias = np.random.uniform(-3.0, 3.0, n_filters)
 
-        my_conv = ConvLayer(batch.shape, n_filters, k_size[0], k_size[1], Linear(), pad=padding, stride=stride)
+        my_conv = ConvLayer(batch.shape[1:], n_filters, k_size[0], k_size[1], Linear(), pad=padding, stride=stride)
         my_conv._set_kernels(kernel)
         my_conv._set_bias(bias)
-        my_max = MaxPooling(batch.shape, k_size[0], k_size[1], stride=stride)
-        my_avg = AveragePooling(batch.shape, k_size[0], k_size[1], stride=stride)
+        my_max = MaxPooling(batch.shape[1:], k_size[0], k_size[1], stride=stride)
+        my_avg = AveragePooling(batch.shape[1:], k_size[0], k_size[1], stride=stride)
 
         torch_conv = nn.Conv2d(channels, n_filters, k_size, stride=stride, padding=padding)
         torch_conv.weight = nn.Parameter(torch.tensor(kernel).float())
@@ -51,5 +51,10 @@ def conv_test():
 
 
 if __name__ == "__main__":
-    indices_test()
+    #indices_test()
     conv_test()
+    exit(0)
+
+    batch_size, im_s, channels, n_filters, k_size, stride, padding = 2, 3, 2, 2, (2, 2), 0, 0
+    batch = np.stack([np.stack([np.arange(im_s ** 2).reshape((im_s, im_s)) + i * im_s ** 2 for i in range(channels)],
+                               axis=0) + im_s ** 2 * channels * j for j in range(batch_size)], axis=0)

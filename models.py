@@ -20,16 +20,16 @@ class MLP(BaseModel):
         prev = self.input_layer
         self.config = hidden_configure
         for configure in hidden_configure:
-            prev = FullyConnectedLayer(configure, prev, activation_func)
+            prev = FullyConnectedLayer(prev.get_output_shape(), configure, activation_func, prev_layer=prev)
             self.param_count += prev.get_nrof_trainable_params()
             self.hiddden_layers.append(prev)
-        prev = FullyConnectedLayer(nrof_output, prev, Linear())
+        prev = FullyConnectedLayer(prev.get_output_shape(),nrof_output, Linear(), prev_layer=prev)
         self.param_count += prev.get_nrof_trainable_params()
         self.hiddden_layers.append(prev)
         if type == self.types[0]:
-            self.out = SoftmaxOutputLayer(prev)
+            self.out = SoftmaxOutputLayer(prev_layer=prev)
         elif type == self.types[1]:
-            self.out = SimpleOutputLayer(prev)
+            self.out = SimpleOutputLayer(prev_layer=prev)
 
     def get_nrof_trainable_params(self):
         return self.param_count
@@ -45,10 +45,11 @@ class MLP(BaseModel):
         hit, count, loss = 0, 0, 0
         for input, one_hot_vector in generator:
             res = self(input)
-            count += one_hot_vector
-            loss -= np.log(res[one_hot_vector.argmax()])
-            if one_hot_vector.argmax() == res.argmax():
-                hit += one_hot_vector
+            count += one_hot_vector.sum(axis=0)
+            loss -= np.log((res * one_hot_vector).sum(axis=1)).sum()
+            for i in range(input.shape[0]):
+                if one_hot_vector[i].argmax() == res[i].argmax():
+                    hit += one_hot_vector[i]
         return loss, hit, count
 
 

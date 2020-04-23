@@ -60,36 +60,41 @@ class BaseOptimizer:
     def get_learning_rate(self):
         return self.learning_rate
 
-    def minimise(self, batch):
-        batch_size = len(batch)
+    def minimise(self, batch, labels):
+        batch_size = batch.shape[0]
         net_params = []
         loss, hit, count = 0, 0, 0
         label_bias = self.label_smoothing / self.net.nrof_output
         label_mul = (1 - self.label_smoothing)
-        for input, t in batch:
-            res = self.net(input)
-            loss += self.loss_func(res, t)
-            count += t
-            if res.argmax() == t.argmax():
-                hit += t
-            if self.label_smoothing:
-                t = t * label_mul + label_bias
-            dl_dz = res - t  # add loss_func_derivate
-            temp_layer_grads = []
-            prev_layer = self.net.get_last_layer()
-            while not prev_layer.is_input_layer():
-                dl_dz = prev_layer.backward(dl_dz)
-                if prev_layer.is_trainable():
-                    temp_layer_grads.append(prev_layer.get_grad())
-                prev_layer = prev_layer.get_previous_layer()
-            net_params.append(temp_layer_grads)
-        p = [[k for k in layer_param] for layer_param in net_params[0]]
-        for test_index in range(1, len(net_params)):
-            for layer_index, layer_param in enumerate(net_params[test_index]):
-                for k, param in enumerate(layer_param):
-                    p[layer_index][k] += param
-        p = [[k / batch_size for k in layer_param] for layer_param in p]
-        p = self.update_layers_rule(p)
+
+        #for input, t in batch:
+        res = self.net(batch)
+        loss += self.loss_func(res, labels)
+        count += labels.sum(axis=0)
+        for i in range(batch.shape[0]):
+            if labels[i].argmax() == res[i].argmax():
+                hit += labels[i]
+
+        if self.label_smoothing:
+            labels = labels * label_mul + label_bias
+
+        dl_dz = res - labels  # add loss_func_derivate
+
+        temp_layer_grads = []
+        prev_layer = self.net.get_last_layer()
+        while prev_layer.get_previous_layer():
+            dl_dz = prev_layer.backward(dl_dz)
+            if prev_layer.is_trainable():
+                temp_layer_grads.append(prev_layer.get_grad())
+            prev_layer = prev_layer.get_previous_layer()
+
+        dl_dz = prev_layer.backward(dl_dz)
+        if prev_layer.is_trainable():
+            temp_layer_grads.append(prev_layer.get_grad())
+        #net_params.append(temp_layer_grads)
+
+        p = self.update_layers_rule(temp_layer_grads)
+
         prev_layer = self.net.get_last_layer()
         layer_index = 0
         while not prev_layer.is_input_layer():
@@ -114,8 +119,8 @@ class BaseModel:
     def train(self, batch_generator, optimizer):
         error_rate, cross_entripy = [], []
         loss, hit, count = 0, 0, 0
-        for batch in batch_generator:
-            loss, hit, count = optimizer.minimise(batch)
+        for batch, labels in batch_generator:
+            loss, hit, count = optimizer.minimise(batch, labels)
         error_rate.append(1 - hit.sum()/count.sum())
         cross_entripy.append(loss)
         return error_rate, cross_entripy
