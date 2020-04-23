@@ -13,6 +13,20 @@ class ReLU(BaseActivationFunction):
         return "ReLU"
 
 
+class LeakyReLU(BaseActivationFunction):
+    def __init__(self, alpha):
+        self.alpha = alpha
+
+    def __call__(self, input: np.ndarray) -> np.ndarray:
+        return np.where(input < 0, input * self.alpha, input)
+
+    def derivate(self, input: np.ndarray) -> np.ndarray:
+        return np.where(input < 0, self.alpha, 1)
+
+    def __str__(self):
+        return "LeakyReLU"
+
+
 class Linear(BaseActivationFunction):
     def __call__(self, input: np.ndarray) -> np.ndarray:
         return input[:]

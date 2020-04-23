@@ -124,13 +124,15 @@ class DataLoader(object):
 
     def batch_transform(self, batch):
         out_batch = []
+        out_labels = []
         for image, label in batch:
             for index, transform in enumerate(self.transforms):
                 if np.random.rand() < self.transform_probs[index]:
                     image = transform.call(image)
                     #print(image.shape)
-            out_batch.append((image, self.one_hot_labels(label)))
-        return out_batch
+            out_batch.append(image)
+            out_labels.append(self.one_hot_labels(label))
+        return np.stack(out_batch,axis=0), np.stack(out_labels,axis=0)
 
     def get_full_generator(self, count=-1):
         """
@@ -138,11 +140,11 @@ class DataLoader(object):
         """
         if count == -1:
             for i in range(self.number_of_samples):
-                yield (self.read_data(i), self.one_hot_labels(self.labels[i]))
+                yield (np.expand_dims(self.read_data(i),axis=0), np.expand_dims(self.one_hot_labels(self.labels[i]),axis=0))
         else:
             np.random.shuffle(self.shuffle_map)
             for i in range(count):
-                yield (self.read_data(self.shuffle_map[i]), self.one_hot_labels(self.labels[self.shuffle_map[i]]))
+                yield (np.expand_dims(self.read_data(self.shuffle_map[i]), axis=0), np.expand_dims(self.one_hot_labels(self.labels[self.shuffle_map[i]]), axis=0))
 
 
     def batch_generator(self):
@@ -157,9 +159,9 @@ class DataLoader(object):
             for epoch in range(self.epoch_size):
                 batch = [(self.read_data(self.shuffle_map[i]), self.labels[self.shuffle_map[i]])
                          for i in range(epoch * self.batch_size, (epoch + 1) * self.batch_size)]
-                batch = self.batch_transform(batch)
+                batch, labels = self.batch_transform(batch)
                 self.current_batch = batch
-                yield batch
+                yield batch, labels
         else:
             if self.shuffle:
                 for arr in self.samples_by_label:
@@ -170,9 +172,9 @@ class DataLoader(object):
                                  for _ in range(self.batch_size)]
                 random_indexes = [np.random.choice(self.samples_by_label[_class]) for _class in class_choices]
                 batch = [(self.read_data(index), self.labels[index]) for index in random_indexes]
-                batch = self.batch_transform(batch)
+                batch, labels = self.batch_transform(batch)
                 self.current_batch = batch
-                yield batch
+                yield batch, labels
 
     def show_batch(self):
         """
@@ -181,11 +183,10 @@ class DataLoader(object):
         :return:
         """
         batch = self.current_batch
-        batch_shape = batch[0][0].shape
+        batch_shape = batch.shape[1:]
+        print(batch.shape)
         res = np.zeros((batch_shape[0], batch_shape[1] * self.batch_size), dtype=np.uint8)
-        for index, img_label in enumerate(batch):
-            img, label = img_label
-            logger.debug(f"{index}: {label}, {label}")
+        for index, img in enumerate(batch):
             res[:, index * batch_shape[1]:(index + 1) * batch_shape[1]] = img
 
         cv2.imshow(f"Batch size={self.batch_size}", res)

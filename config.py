@@ -24,14 +24,11 @@ cfg.train_labels_path = "MNIST/train-labels-idx1-ubyte"
 cfg.nrof_classes = 10
 cfg.dataset_type = ['train', 'valid', 'test'][0]
 cfg.shuffle = True
-cfg.batch_size = 600
-cfg.transforms = [Scale(28, 0.8), RandomRotateImage(-10, 10), Translate2D(3, 'up', roll=False),
-                      Translate2D(3, 'down', roll=False), Translate2D(3, 'right', roll=False),
-                      Translate2D(3, 'left', roll=False),
-                      AdaptiveNormalize()]
-cfg.transform_probs = [0.1, 0.2, 0.1, 0.1, 0.1, 0.1, 1]
-cfg.sample_type = ['default', 'balanced', 'prob'][2]
-cfg.epoch_size = 10
+cfg.batch_size = 32
+cfg.transforms = [AdaptiveNormalize()]
+cfg.transform_probs = [1]
+cfg.sample_type = ['default', 'balanced', 'prob'][0]
+cfg.epoch_size = None
 cfg.probabilities = np.array([0.04, 0.04, 0.12, 0.1, 0.1, 0.2, 0.08, 0.08, 0.09, 0.15])
 
 
