@@ -27,8 +27,8 @@ cfg.shuffle = True
 cfg.batch_size = 32
 cfg.transforms = [AdaptiveNormalize()]
 cfg.transform_probs = [1]
-cfg.sample_type = ['default', 'balanced', 'prob'][0]
-cfg.epoch_size = None
+cfg.sample_type = ['default', 'balanced', 'prob'][1]
+cfg.epoch_size = 64
 cfg.probabilities = np.array([0.04, 0.04, 0.12, 0.1, 0.1, 0.2, 0.08, 0.08, 0.09, 0.15])
 
 

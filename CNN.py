@@ -106,13 +106,12 @@ if __name__=="__main__":
             print(f"{iteration} training...")
             err_rate, entropy = model.train(dl_train.batch_generator(), optimizer)
             error_rate += err_rate
-            cross_entripy += entropy
             print(f"{iteration} train validation...")
-            loss, hit, count = model.validate(dl_train.get_full_generator(count=10000))
+            loss, hit, count = model.validate(dl_train.get_full_generator(count=1000))
             train_accuracy.append(hit.sum() / count.sum())
-            #cross_entripy.append(loss)
+            cross_entripy.append(loss)
             print(f"{iteration} test validation...")
-            loss, hit, count = model.validate(dl_test.get_full_generator())
+            loss, hit, count = model.validate(dl_test.get_full_generator(count=1000))
             accuracy = hit.sum() / count.sum()
 
             if accuracy > accuracy_max:
@@ -120,19 +119,16 @@ if __name__=="__main__":
                 accuracy_max = accuracy
             test_accuracy.append(accuracy)
             print(
-                f"\repoch: {iteration} train_acc: {train_accuracy[-1]} test_acc: {test_accuracy[-1]} best: {accuracy_max} entropy: {cross_entripy[-1]}")
+                f"\repoch: {iteration} train_acc: {train_accuracy[-1]} test_acc: {test_accuracy[-1]} best: {accuracy_max}")
     except Exception as e:
         print(f"Exception {e}")
         raise e
     finally:
         plt.figure(figsize=(14, 5))
-        plt.subplot(1, 3, 1)
+        plt.subplot(1, 2, 1)
         plt.title('Error rate')
         plt.plot(error_rate)
-        plt.subplot(1, 3, 2)
-        plt.title('Entropy')
-        plt.plot(cross_entripy)
-        plt.subplot(1, 3, 3)
+        plt.subplot(1, 2, 2)
         plt.title('Accuracy:')
         plt.plot(test_accuracy, label='test')
         plt.plot(train_accuracy, label='train')
