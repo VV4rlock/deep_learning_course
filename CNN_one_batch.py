@@ -50,7 +50,7 @@ if __name__=="__main__":
         while accuracy < 1:
             iteration += 1
 
-            err_rate, entropy = cnn.train(one_batch_gen(overfit_batch, labels, 1), optimizer)
+            err_rate, entropy = cnn.train(one_batch_gen(overfit_batch, labels, 2), optimizer)
             error_rate += err_rate
             cross_entripy += entropy
             loss, hit, count = cnn.validate(one_batch_validate(overfit_batch, labels))
