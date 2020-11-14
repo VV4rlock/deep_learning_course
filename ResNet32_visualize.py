@@ -33,11 +33,12 @@ def train_acc():
     model.eval()
     correct = 0
     total = 0
-    trainset = torchvision.datasets.CIFAR10(CIFAR_PATH, train=True, download=True, transform=transform)
+    trainset = torchvision.datasets.CIFAR10(CIFAR_PATH, train=False, download=True, transform=transform)
     train_loader = DataLoader(trainset, batch_size=BS, shuffle=True)
+    l = len(train_loader)
     with torch.no_grad():
         for i, (images, labels) in enumerate(train_loader):
-
+            print(f"{i}/{l}")
             outputs = model(images)
             loss = loss_fn(outputs, labels)
 
@@ -134,7 +135,8 @@ def activation_vis():
 
 
 if __name__ == "__main__":
-    # torch.save(model, PATH)
+    train_acc()
+    #torch.save(model, PATH)
     # print(f"Model was dumped to {PATH}")
     #
     #cam()
